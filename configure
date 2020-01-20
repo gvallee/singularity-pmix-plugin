@@ -1,0 +1,41 @@
+#!/usr/bin/perl
+#
+
+use strict;
+use warnings "all";
+use Getopt::Long;
+
+my $singularity_dir = "";
+my $pmix_dir = "";
+
+sub print_help() {
+	print "Usage: $0 --pmix-dir=<dir/where/pmix/is/installed> --singularity-dir=<path/to/singularity/source>\n";
+	exit 0;
+}
+
+GetOptions ("singularity-dir=s" => \$singularity_dir,
+            "pmix-dir=s"        => \$pmix_dir);
+
+if ($pmix_dir eq "" || $singularity_dir eq "") {
+	print_help();
+}
+
+my $fh;
+open ($fh, ">", "Makefile");
+print $fh "PMIX_DIR=$pmix_dir\n";
+print $fh "SINGULARITY_DIR=$singularity_dir\n";
+print $fh "CWD=\$(shell pwd)\n";
+print $fh "\n";
+print $fh "all: singularity-symlink main\n";
+print $fh "\n";
+print $fh "singularity-symlink:\n"; 
+print $fh "\tln -s \$(SINGULARITY_DIR) singularity_source\n";
+print $fh "\n";
+print $fh "main: main.go\n";
+print $fh "\tCGO_CFLAGS=\"-I\$(PMIX_DIR)/include\" CGO_LDFLAGS=\"-L\$(PMIX_DIR)/lib -lpmix -Wl,-rpath,\$(PMIX_DIR)/lib\" singularity plugin compile \$(CWD)\n";
+print $fh "\t\@echo \"PMIx plugin ready, please install it with a command such as:\"\n";
+print $fh "\t\@echo \"   sudo singularity plugin install \$(CWD)/singularity-pmix-plugin.sif\"\n";
+print $fh "\n";
+print $fh "clean:\n";
+print $fh "\t\@rm -f  singularity-pmix-plugin.sif  singularity_source\n";
+close ($fh);

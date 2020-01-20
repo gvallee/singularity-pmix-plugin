@@ -1,0 +1,5 @@
+singularity_source
+Makefile
+*.sif
+*.o
+*.a
